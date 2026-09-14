@@ -1,6 +1,6 @@
 {
   "name": "bloodecky",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A simple way to install and manage Bloodborne on your Steam Deck.",
   "type": "module",
   "scripts": {
