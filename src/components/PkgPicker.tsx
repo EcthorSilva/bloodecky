@@ -1,5 +1,6 @@
 import { FC, useState } from "react";
 import { PanelSectionRow, ButtonItem, Field, Spinner } from "@decky/ui";
+import { toaster } from "@decky/api";
 import { GamePkgStatus } from "../types";
 import { pickGamePkgFiles } from "../api";
 
@@ -16,6 +17,13 @@ export const PkgPicker: FC<Props> = ({ status, onStatusChange }) => {
     try {
       const selected = await pickGamePkgFiles();
       if (selected) onStatusChange(selected);
+    } catch (error) {
+      console.error("Failed to import game packages", error);
+      toaster.toast({
+        title: "Bloodecky",
+        body: "Could not move the selected PKG files. Restart the plugin and try again.",
+        duration: 5000,
+      });
     } finally {
       setScanning(false);
     }

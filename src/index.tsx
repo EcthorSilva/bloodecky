@@ -3,7 +3,7 @@ import { definePlugin, PanelSection, PanelSectionRow, ButtonItem, staticClasses 
 import { FaSyringe  } from "react-icons/fa";
 
 import { GamePkgStatus, InstallationStatus, PROFILES, ProfileId } from "./types";
-import { applyMods, startInstall, validateInstallation } from "./api";
+import { applyMods, scanGamePkg, startInstall, validateInstallation } from "./api";
 import { PkgPicker } from "./components/PkgPicker";
 import { ProfileSelector } from "./components/ProfileSelector";
 import { ModChecklist } from "./components/ModChecklist";
@@ -25,7 +25,13 @@ function Content() {
     setStep("validating");
     const status = await validateInstallation();
     setInstallation(status);
-    setStep(status.installed ? "manage" : "pkg");
+    if (status.installed) {
+      setStep("manage");
+      return;
+    }
+
+    setPkgStatus(await scanGamePkg());
+    setStep("pkg");
   };
 
   useEffect(() => {

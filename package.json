@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rollup -c",
-    "deploy:deck": "pnpm build && ssh -t deck@192.168.15.22 \"sudo chown -R deck:deck /home/deck/homebrew/plugins/bloodecky\" && scp -r ./dist ./plugin.json deck@192.168.15.22:/home/deck/homebrew/plugins/bloodecky/ && ssh -t deck@192.168.15.22 \"sudo systemctl restart plugin_loader\"",
+    "deploy:deck": "pnpm build && ssh -t deck@192.168.15.22 \"sudo chown -R deck:deck /home/deck/homebrew/plugins/bloodecky\" && scp -r ./dist ./main.py ./plugin.json deck@192.168.15.22:/home/deck/homebrew/plugins/bloodecky/ && ssh -t deck@192.168.15.22 \"sudo systemctl restart plugin_loader\"",
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

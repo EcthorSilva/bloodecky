@@ -13,30 +13,43 @@ INSTALL_MARKER = os.path.join(INSTALL_PATH, ".bloodecky-installed")
 
 class Plugin:
     async def scan_game_pkg(self) -> dict:
-        base_path = None
-        update_path = None
-        if os.path.isdir(GAME_PKG_PATH):
-            for filename in os.listdir(GAME_PKG_PATH):
-                if not filename.lower().endswith(".pkg"):
-                    continue
-                path = os.path.join(GAME_PKG_PATH, filename)
-                if "update" in filename.lower() or "patch" in filename.lower():
-                    update_path = path
-                elif base_path is None:
-                    base_path = path
+        base_path = os.path.join(GAME_PKG_PATH, "Bloodborne.pkg")
+        update_path = os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg")
         return {
-            "basePkgFound": base_path is not None,
-            "basePkgPath": base_path,
-            "updatePkgFound": update_path is not None,
-            "updatePkgPath": update_path,
+            "basePkgFound": os.path.isfile(base_path),
+            "basePkgPath": base_path if os.path.isfile(base_path) else None,
+            "updatePkgFound": os.path.isfile(update_path),
+            "updatePkgPath": update_path if os.path.isfile(update_path) else None,
         }
 
-    async def import_game_pkgs(self, base_path: str, update_path: str) -> None:
-        if not os.path.isfile(base_path) or not os.path.isfile(update_path):
+    async def import_game_pkgs(self, first_path: str, second_path: str) -> dict:
+        if not os.path.isfile(first_path) or not os.path.isfile(second_path):
             raise ValueError("Selected game package files do not exist")
+        base_path, update_path = self._normalize_pkg_order(first_path, second_path)
         os.makedirs(GAME_PKG_PATH, mode=0o755, exist_ok=True)
         self._move_pkg(base_path, os.path.join(GAME_PKG_PATH, "Bloodborne.pkg"))
         self._move_pkg(update_path, os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg"))
+        return await self.scan_game_pkg()
+
+    @staticmethod
+    def _normalize_pkg_order(first_path: str, second_path: str) -> tuple[str, str]:
+        paths = (first_path, second_path)
+        update_candidates = [
+            path for path in paths
+            if any(keyword in os.path.basename(path).lower() for keyword in ("update", "patch", "dlc"))
+        ]
+        if len(update_candidates) == 1:
+            update_path = update_candidates[0]
+            base_path = second_path if update_path == first_path else first_path
+            return base_path, update_path
+
+        first_size = os.path.getsize(first_path)
+        second_size = os.path.getsize(second_path)
+        if first_size == second_size:
+            raise ValueError("Could not identify base game and update package")
+        if first_size > second_size:
+            return first_path, second_path
+        return second_path, first_path
 
     @staticmethod
     def _move_pkg(source_path: str, destination_path: str) -> None:

@@ -22,7 +22,7 @@ export async function scanGamePkg(): Promise<GamePkgStatus> {
 }
 
 export async function pickGamePkgFiles(): Promise<GamePkgStatus | null> {
-  const baseGame = await openFilePicker(
+  const firstPackage = await openFilePicker(
     FileSelectionType.FILE,
     "/home/deck/Downloads",
     true,
@@ -30,9 +30,9 @@ export async function pickGamePkgFiles(): Promise<GamePkgStatus | null> {
     undefined,
     ["pkg"],
   );
-  if (!baseGame.path) return null;
+  if (!firstPackage.path) return null;
 
-  const update = await openFilePicker(
+  const secondPackage = await openFilePicker(
     FileSelectionType.FILE,
     "/home/deck/Downloads",
     true,
@@ -40,10 +40,13 @@ export async function pickGamePkgFiles(): Promise<GamePkgStatus | null> {
     undefined,
     ["pkg"],
   );
-  if (!update.path) return null;
+  if (!secondPackage.path) return null;
 
-  await call<[string, string], void>("import_game_pkgs", baseGame.realpath || baseGame.path, update.realpath || update.path);
-  return scanGamePkg();
+  return call<[string, string], GamePkgStatus>(
+    "import_game_pkgs",
+    firstPackage.realpath || firstPackage.path,
+    secondPackage.realpath || secondPackage.path,
+  );
 }
 
 export async function listAvailableMods(): Promise<string[]> {
