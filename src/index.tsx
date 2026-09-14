@@ -1,115 +1,86 @@
-import {
-  ButtonItem,
-  PanelSection,
-  PanelSectionRow,
-  Navigation,
-  staticClasses
-} from "@decky/ui";
-import {
-  addEventListener,
-  removeEventListener,
-  callable,
-  definePlugin,
-  toaster,
-  // routerHook
-} from "@decky/api"
 import { useState } from "react";
-import { FaShip } from "react-icons/fa";
+import { definePlugin, PanelSection, PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui";
+import { FaSkull } from "react-icons/fa";
 
-// import logo from "../assets/logo.png";
+import { GamePkgStatus, PROFILES, ProfileId } from "./types";
+import { startInstall } from "./api";
+import { PkgPicker } from "./components/PkgPicker";
+import { ProfileSelector } from "./components/ProfileSelector";
+import { ModChecklist } from "./components/ModChecklist";
+import { InstallProgress } from "./components/InstallProgress";
 
-// This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
-// Note the type annotations:
-//  the first one: [first: number, second: number] is for the arguments
-//  the second one: number is for the return value
-const add = callable<[first: number, second: number], number>("add");
-
-// This function calls the python function "start_timer", which takes in no arguments and returns nothing.
-// It starts a (python) timer which eventually emits the event 'timer_event'
-const startTimer = callable<[], void>("start_timer");
+type Step = "pkg" | "profile" | "mods" | "installing" | "done";
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  const [step, setStep] = useState<Step>("pkg");
+  const [pkgStatus, setPkgStatus] = useState<GamePkgStatus | null>(null);
+  const [profile, setProfile] = useState<ProfileId>("deckborne-30");
+  const [selectedMods, setSelectedMods] = useState<Set<string>>(new Set(["vertex-explosion-fix"]));
 
-  const onClick = async () => {
-    const result = await add(Math.random(), Math.random());
-    setResult(result);
+  const pkgReady = !!pkgStatus?.basePkgFound && !!pkgStatus?.updatePkgFound;
+  const requiresMods = PROFILES.find((p) => p.id === profile)?.requiresMods ?? false;
+
+  const handleInstall = async () => {
+    setStep("installing");
+    await startInstall(profile, Array.from(selectedMods));
   };
 
   return (
-    <PanelSection title="Panel Section">
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={onClick}
-        >
-          {result ?? "Add two numbers via Python"}
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => startTimer()}
-        >
-          {"Start Python timer"}
-        </ButtonItem>
-      </PanelSectionRow>
+    <>
+      <PanelSection title="1. Game files">
+        <PkgPicker status={pkgStatus} onStatusChange={setPkgStatus} />
+      </PanelSection>
 
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow> */}
+      {pkgReady && (
+        <PanelSection title="2. Profile">
+          <ProfileSelector selected={profile} onSelect={setProfile} />
+        </PanelSection>
+      )}
 
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
-    </PanelSection>
+      {pkgReady && requiresMods && (
+        <PanelSection title="3. Mods">
+          <ModChecklist selected={selectedMods} onChange={setSelectedMods} />
+        </PanelSection>
+      )}
+
+      {pkgReady && step !== "installing" && step !== "done" && (
+        <PanelSection>
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              disabled={requiresMods && !selectedMods.has("vertex-explosion-fix")}
+              onClick={handleInstall}
+            >
+              Install
+            </ButtonItem>
+          </PanelSectionRow>
+        </PanelSection>
+      )}
+
+      {step === "installing" && (
+        <PanelSection title="Installing">
+          <InstallProgress onFinished={(success) => setStep(success ? "done" : "pkg")} />
+        </PanelSection>
+      )}
+
+      {step === "done" && (
+        <PanelSection title="Done">
+          <PanelSectionRow>
+            <span style={{ fontSize: "13px" }}>
+              Bloodborne is on your Steam tiles. Back out to Library and launch it.
+            </span>
+          </PanelSectionRow>
+        </PanelSection>
+      )}
+    </>
   );
-};
+}
 
 export default definePlugin(() => {
-  console.log("Template plugin initializing, this is called once on frontend startup")
-
-  // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-  //   exact: true,
-  // });
-
-  // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
-    test1: string,
-    test2: boolean,
-    test3: number
-  ]>("timer_event", (test1, test2, test3) => {
-    console.log("Template got timer_event with:", test1, test2, test3)
-    toaster.toast({
-      title: "template got timer_event",
-      body: `${test1}, ${test2}, ${test3}`
-    });
-  });
-
   return {
-    // The name shown in various decky menus
-    name: "Test Plugin",
-    // The element displayed at the top of your plugin's menu
-    titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
-    // The content of your plugin's menu
+    name: "Bloodecky",
+    titleView: <div className={staticClasses.Title}>Bloodecky</div>,
     content: <Content />,
-    // The icon displayed in the plugin list
-    icon: <FaShip />,
-    // The function triggered when your plugin unloads
-    onDismount() {
-      console.log("Unloading")
-      removeEventListener("timer_event", listener);
-      // serverApi.routerHook.removeRoute("/decky-plugin-test");
-    },
+    icon: <FaSkull />,
   };
 });
