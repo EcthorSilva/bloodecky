@@ -3,7 +3,7 @@ import { definePlugin, PanelSection, PanelSectionRow, ButtonItem, staticClasses 
 import { FaSyringe  } from "react-icons/fa";
 
 import { GamePkgStatus, InstallationStatus, PROFILES, ProfileId } from "./types";
-import { applyMods, scanGamePkg, startInstall, validateInstallation } from "./api";
+import { applyMods, scanGamePkg, startInstall, syncMods, validateInstallation } from "./api";
 import { PkgPicker } from "./components/PkgPicker";
 import { ProfileSelector } from "./components/ProfileSelector";
 import { ModChecklist } from "./components/ModChecklist";
@@ -20,6 +20,28 @@ function Content() {
 
   const pkgReady = !!pkgStatus?.basePkgFound && !!pkgStatus?.updatePkgFound;
   const requiresMods = PROFILES.find((p) => p.id === profile)?.requiresMods ?? false;
+
+  const handleProfileSelect = (nextProfile: ProfileId) => {
+    const nextRequiresMods = PROFILES.find((p) => p.id === nextProfile)?.requiresMods ?? false;
+    const nextMods = new Set(selectedMods);
+    if (nextRequiresMods) nextMods.add("vertex-explosion-fix");
+    else nextMods.delete("vertex-explosion-fix");
+    setProfile(nextProfile);
+    setSelectedMods(nextMods);
+    void syncMods(nextProfile, Array.from(nextMods));
+  };
+
+  const handleModsChange = (nextMods: Set<string>) => {
+    setSelectedMods(nextMods);
+    void syncMods(profile, Array.from(nextMods));
+  };
+
+  const handlePkgStatusChange = (nextStatus: GamePkgStatus) => {
+    setPkgStatus(nextStatus);
+    if (nextStatus.basePkgFound && nextStatus.updatePkgFound && requiresMods) {
+      void syncMods(profile, Array.from(selectedMods));
+    }
+  };
 
   const validate = async () => {
     setStep("validating");
@@ -44,6 +66,7 @@ function Content() {
     if (step === "manage") {
       await applyMods(profile, modIds);
     } else {
+      await syncMods(profile, modIds);
       await startInstall(profile, modIds);
     }
   };
@@ -57,20 +80,20 @@ function Content() {
       )}
 
       {step === "pkg" && (
-        <PanelSection title="1. Game files">
-          <PkgPicker status={pkgStatus} onStatusChange={setPkgStatus} />
+        <PanelSection title="Game files">
+          <PkgPicker status={pkgStatus} onStatusChange={handlePkgStatusChange} />
         </PanelSection>
       )}
 
       {(step === "manage" || pkgReady) && (
-        <PanelSection title="2. Profile">
-          <ProfileSelector selected={profile} onSelect={setProfile} />
+        <PanelSection title="Profile">
+          <ProfileSelector selected={profile} onSelect={handleProfileSelect} />
         </PanelSection>
       )}
 
       {(step === "manage" || pkgReady) && requiresMods && (
-        <PanelSection title="3. Mods">
-          <ModChecklist selected={selectedMods} onChange={setSelectedMods} />
+        <PanelSection title="Mods">
+          <ModChecklist selected={selectedMods} requiresMods={requiresMods} onChange={handleModsChange} />
         </PanelSection>
       )}
 

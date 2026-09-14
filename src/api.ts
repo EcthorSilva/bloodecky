@@ -67,8 +67,11 @@ export async function startInstall(profile: ProfileId, selectedModIds: string[])
 }
 
 export async function applyMods(profile: ProfileId, selectedModIds: string[]): Promise<void> {
-  if (USE_MOCKS) return;
   await call<[ProfileId, string[]], void>("apply_mods", profile, selectedModIds);
+}
+
+export async function syncMods(profile: ProfileId, selectedModIds: string[]): Promise<void> {
+  await call<[ProfileId, string[]], void>("sync_mods", profile, selectedModIds);
 }
 
 export async function cancelInstall(): Promise<void> {

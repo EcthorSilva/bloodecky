@@ -5,10 +5,11 @@ import { listAvailableMods } from "../api";
 
 interface Props {
   selected: Set<string>;
+  requiresMods: boolean;
   onChange: (next: Set<string>) => void;
 }
 
-export const ModChecklist: FC<Props> = ({ selected, onChange }) => {
+export const ModChecklist: FC<Props> = ({ selected, requiresMods, onChange }) => {
   const [availableOnDisk, setAvailableOnDisk] = useState<string[]>([]);
 
   useEffect(() => {
@@ -25,30 +26,34 @@ export const ModChecklist: FC<Props> = ({ selected, onChange }) => {
     <>
       <PanelSectionRow>
         <span style={{ fontSize: "12px", opacity: 0.7 }}>
-          Mods must be downloaded from Nexus and dropped into payloads/mods/ before installing — Bloodecky
-          never bundles or downloads them for you.
+          Vertex Explosion Fix, Deck 16:10 UI Fix, and FPS Boost are included with Bloodecky. Other mods
+          must be downloaded from Nexus and added to payloads/mods/.
         </span>
       </PanelSectionRow>
 
       {MODS.map((mod) => {
-        const onDisk = availableOnDisk.includes(mod.id);
-        const checked = mod.required || selected.has(mod.id);
+        const available = mod.source === "bundled" || availableOnDisk.includes(mod.id);
+        const checked = (mod.required && requiresMods) || selected.has(mod.id);
         return (
           <PanelSectionRow key={mod.id}>
             <ToggleField
               label={mod.name}
               description={
-                mod.required
+                mod.source === "bundled"
+                  ? mod.required && requiresMods
+                    ? "Included and required for this profile"
+                    : mod.note ?? (mod.recommended ? "Included and recommended" : "Included")
+                  : mod.required && requiresMods
                   ? "Required for this profile"
-                  : onDisk
+                  : available
                   ? mod.note ?? (mod.recommended ? "Recommended" : "Optional")
                   : "Not found in payloads/mods/ — download it first"
               }
               checked={checked}
-              disabled={mod.required || !onDisk}
+              disabled={(mod.required && requiresMods) || !available}
               onChange={(v) => toggle(mod.id, v)}
             />
-            {!onDisk && (
+            {!available && mod.source === "external" && (
               <ButtonItem
                 layout="below"
                 onClick={() => Navigation.NavigateToExternalWeb(mod.nexusUrl)}

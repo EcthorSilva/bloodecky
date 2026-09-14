@@ -50,39 +50,109 @@ export const PROFILES: ProfileOption[] = [
 export interface ModEntry {
   id: string;
   name: string;
+  version: string;
   nexusUrl: string;
+  source: "bundled" | "external";
   required: boolean;
   recommended: boolean;
   note?: string;
 }
 
-// Sourced from the README's mod tables. The catalog itself only ever holds
-// URLs, never files — same rule applies here.
+// Sourced from the README's mod tables. Bundled entries are shipped with the
+// plugin; external entries are downloaded by the user.
 export const MODS: ModEntry[] = [
   {
     id: "vertex-explosion-fix",
     name: "Vertex Explosion Fix",
     nexusUrl: "https://nexusmods.com/bloodborne/mods/109",
+    version: "1.0",
+    source: "bundled",
     required: true,
     recommended: true,
     note: "Required for any DeckBorne profile. Without it, 30/60 FPS++ makes faces explode.",
   },
-  { id: "deck-1610-ui-fix", name: "Deck 16:10 UI Fix", nexusUrl: "https://nexusmods.com/bloodborne/mods/207", required: false, recommended: true },
-  { id: "fps-boost", name: "FPS Boost 1.0", nexusUrl: "https://nexusmods.com/bloodborne/mods/27", required: false, recommended: true },
-  { id: "reshaded", name: "Bloodborne Reshaded", nexusUrl: "https://nexusmods.com/bloodborne/mods/27", required: false, recommended: true },
+  { 
+    id: "deck-1610-ui-fix", 
+    name: "Deck 16:10 UI Fix", 
+    version: "1.0.1",
+    source: "bundled",
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/207", 
+    required: false, 
+    recommended: true 
+  },
+  { 
+    id: "fps-boost", 
+    name: "FPS Boost 1.0", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/27", 
+    version: "1.2",
+    source: "bundled",
+    required: false, 
+    recommended: true 
+  },
+  { 
+    id: "reshaded", 
+    name: "Bloodborne Reshaded", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/27", 
+    version: "1.2", 
+    source: "external",
+    required: false, 
+    recommended: true 
+  },
   {
     id: "pointlight-removal",
     name: "Pointlight Removal",
     nexusUrl: "https://nexusmods.com/bloodborne/mods/27",
+    version: "1.2",
+    source: "external",
     required: false,
     recommended: true,
     note: "Fixes brightness. May be too dark on a non-OLED Deck.",
   },
-  { id: "half-cloth-physics", name: "Half Cloth Physics w/ Blood", nexusUrl: "https://nexusmods.com/bloodborne/mods/114", required: false, recommended: true },
-  { id: "xbox-prompts", name: "Elden Ring Style Modern Xbox Prompts", nexusUrl: "https://nexusmods.com/bloodborne/mods/30", required: false, recommended: true },
-  { id: "more-lamp-options", name: "More Options At Lamps", nexusUrl: "https://nexusmods.com/bloodborne/mods/107", required: false, recommended: false },
-  { id: "60fps-cutscene-fix", name: "60 FPS Cutscene Fix", nexusUrl: "https://nexusmods.com/bloodborne/mods/70", required: false, recommended: false },
-  { id: "bb-60fps-patch", name: "BB 60 FPS Patch", nexusUrl: "https://nexusmods.com/bloodborne/mods/252", required: false, recommended: false },
+  { 
+    id: "half-cloth-physics", 
+    name: "Half Cloth Physics w/ Blood", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/114", 
+    version: "1.0", 
+    source: "external",
+    required: false, 
+    recommended: true 
+  },
+  { 
+    id: "xbox-prompts", 
+    name: "Elden Ring Style Modern Xbox Prompts", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/30", 
+    version: "0.3.2", 
+    source: "external",
+    required: false, 
+    recommended: true 
+  },
+  { 
+    id: "more-lamp-options", 
+    name: "More Options At Lamps", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/107", 
+    version: "1.0", 
+    source: "external",
+    required: false, 
+    recommended: false 
+  },
+  { 
+    id: "60fps-cutscene-fix", 
+    name: "60 FPS Cutscene Fix", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/70", 
+    version: "2.6", 
+    source: "external",
+    required: false, 
+    recommended: false 
+  },
+  { 
+    id: "bb-60fps-patch", 
+    name: "BB 60 FPS Patch", 
+    nexusUrl: "https://nexusmods.com/bloodborne/mods/252", 
+    version: "1.0", 
+    source: "external",
+    required: false, 
+    recommended: false 
+  },
 ];
 
 export type InstallStage =

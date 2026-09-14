@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 
 # The decky plugin module is located at decky-loader/plugin
 # For easy intellisense checkout the decky-loader code repo
@@ -9,7 +10,11 @@ import asyncio
 
 INSTALL_PATH = "/home/deck/Games/bloodborne"
 GAME_PKG_PATH = os.path.join(INSTALL_PATH, "game-pkg")
+INSTALL_PAYLOADS_PATH = os.path.join(INSTALL_PATH, "payloads")
+INSTALL_MODS_PATH = os.path.join(INSTALL_PAYLOADS_PATH, "mods")
 INSTALL_MARKER = os.path.join(INSTALL_PATH, ".bloodecky-installed")
+MODS_PATH = os.path.join(decky.DECKY_PLUGIN_DIR, "payloads", "mods")
+MOD_STATE_PATH = os.path.join(INSTALL_PATH, ".bloodecky-selected-mods.json")
 
 class Plugin:
     async def scan_game_pkg(self) -> dict:
@@ -27,6 +32,7 @@ class Plugin:
             raise ValueError("Selected game package files do not exist")
         base_path, update_path = self._normalize_pkg_order(first_path, second_path)
         os.makedirs(GAME_PKG_PATH, mode=0o755, exist_ok=True)
+        os.makedirs(INSTALL_MODS_PATH, mode=0o755, exist_ok=True)
         self._move_pkg(base_path, os.path.join(GAME_PKG_PATH, "Bloodborne.pkg"))
         self._move_pkg(update_path, os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg"))
         return await self.scan_game_pkg()
@@ -65,9 +71,45 @@ class Plugin:
             "installPath": INSTALL_PATH,
         }
 
+    async def list_available_mods(self) -> list[str]:
+        if not os.path.isdir(MODS_PATH):
+            return []
+        return sorted(
+            name for name in os.listdir(MODS_PATH)
+            if os.path.isdir(os.path.join(MODS_PATH, name))
+        )
+
+    async def sync_mods(self, profile: str, selected_mod_ids: list[str]) -> None:
+        del profile
+        os.makedirs(INSTALL_MODS_PATH, mode=0o755, exist_ok=True)
+        previous_mods = self._read_mod_state()
+
+        for mod_id in previous_mods:
+            if mod_id not in selected_mod_ids:
+                shutil.rmtree(os.path.join(INSTALL_MODS_PATH, mod_id), ignore_errors=True)
+
+        for mod_id in selected_mod_ids:
+            source = os.path.join(MODS_PATH, mod_id)
+            if not os.path.isdir(source):
+                raise ValueError(f"Mod payload not found: {mod_id}")
+            destination = os.path.join(INSTALL_MODS_PATH, mod_id)
+            shutil.rmtree(destination, ignore_errors=True)
+            shutil.copytree(source, destination)
+
+        with open(MOD_STATE_PATH, "w", encoding="utf-8") as state_file:
+            json.dump({"mods": selected_mod_ids}, state_file, indent=2)
+
     async def apply_mods(self, profile: str, selected_mod_ids: list[str]) -> None:
-        # The installer pipeline will apply the selected overlays in this path.
-        pass
+        await self.sync_mods(profile, selected_mod_ids)
+
+    @staticmethod
+    def _read_mod_state() -> list[str]:
+        try:
+            with open(MOD_STATE_PATH, encoding="utf-8") as state_file:
+                state = json.load(state_file)
+            return state.get("mods", [])
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
     # A normal method. It can be called from the TypeScript side using @decky/api.
     async def add(self, left: int, right: int) -> int:
