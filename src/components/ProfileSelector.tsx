@@ -28,9 +28,7 @@ export const ProfileSelector: FC<Props> = ({ selected, onSelect }) => {
                 gap: "2px",
                 padding: "10px 12px",
                 borderRadius: "4px",
-                // Borda azul mantida para indicar qual perfil está ATUALMENTE selecionado
                 border: isSelected ? "2px solid #1a9fff" : "2px solid transparent",
-                // Fundo cinza de foco do SteamOS (rgba 255,255,255, 0.1) quando o D-pad passa por cima
                 background: isFocused
                   ? "rgba(255, 255, 255, 0.1)"
                   : isSelected

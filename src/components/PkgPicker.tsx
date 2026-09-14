@@ -41,7 +41,7 @@ export const PkgPicker: FC<Props> = ({ status, onStatusChange }) => {
       {!scanning && (!status?.basePkgFound || !status?.updatePkgFound) && (
         <PanelSectionRow>
           <span style={{ fontSize: "12px", color: "#e8b339" }}>
-            Drop your own Bloodborne .pkg + v1.09 update into that folder — Bloodecky never provides game files.
+            Select your own Bloodborne .pkg + v1.09 update. They will be moved into the installation folder — Bloodecky never provides game files.
           </span>
         </PanelSectionRow>
       )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { definePlugin, PanelSection, PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui";
-import { FaSkull } from "react-icons/fa";
+import { FaSyringe  } from "react-icons/fa";
 
 import { GamePkgStatus, InstallationStatus, PROFILES, ProfileId } from "./types";
 import { applyMods, startInstall, validateInstallation } from "./api";
@@ -107,6 +107,6 @@ export default definePlugin(() => {
     name: "Bloodecky",
     titleView: <div className={staticClasses.Title}>Bloodecky</div>,
     content: <Content />,
-    icon: <FaSkull />,
+    icon: <FaSyringe  />,
   };
 });

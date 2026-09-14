@@ -35,8 +35,16 @@ class Plugin:
         if not os.path.isfile(base_path) or not os.path.isfile(update_path):
             raise ValueError("Selected game package files do not exist")
         os.makedirs(GAME_PKG_PATH, mode=0o755, exist_ok=True)
-        shutil.copy2(base_path, os.path.join(GAME_PKG_PATH, "Bloodborne.pkg"))
-        shutil.copy2(update_path, os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg"))
+        self._move_pkg(base_path, os.path.join(GAME_PKG_PATH, "Bloodborne.pkg"))
+        self._move_pkg(update_path, os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg"))
+
+    @staticmethod
+    def _move_pkg(source_path: str, destination_path: str) -> None:
+        if os.path.abspath(source_path) == os.path.abspath(destination_path):
+            return
+        if os.path.exists(destination_path):
+            os.remove(destination_path)
+        shutil.move(source_path, destination_path)
 
     async def validate_installation(self) -> dict:
         return {
