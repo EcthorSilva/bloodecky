@@ -35,6 +35,9 @@ Thumbs.db
 # Ignore built ts files
 dist/
 
+# Mod payloads are supplied locally and must not be committed
+payloads/mods/
+
 __pycache__/
 
 /.yalc
