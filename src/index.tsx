@@ -1,18 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { definePlugin, PanelSection, PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui";
 import { FaSkull } from "react-icons/fa";
 
-import { GamePkgStatus, PROFILES, ProfileId } from "./types";
-import { startInstall } from "./api";
+import { GamePkgStatus, InstallationStatus, PROFILES, ProfileId } from "./types";
+import { applyMods, startInstall, validateInstallation } from "./api";
 import { PkgPicker } from "./components/PkgPicker";
 import { ProfileSelector } from "./components/ProfileSelector";
 import { ModChecklist } from "./components/ModChecklist";
 import { InstallProgress } from "./components/InstallProgress";
 
-type Step = "pkg" | "profile" | "mods" | "installing" | "done";
+type Step = "validating" | "pkg" | "manage" | "installing" | "done";
 
 function Content() {
-  const [step, setStep] = useState<Step>("pkg");
+  const [step, setStep] = useState<Step>("validating");
+  const [installation, setInstallation] = useState<InstallationStatus | null>(null);
   const [pkgStatus, setPkgStatus] = useState<GamePkgStatus | null>(null);
   const [profile, setProfile] = useState<ProfileId>("deckborne-30");
   const [selectedMods, setSelectedMods] = useState<Set<string>>(new Set(["vertex-explosion-fix"]));
@@ -20,38 +21,62 @@ function Content() {
   const pkgReady = !!pkgStatus?.basePkgFound && !!pkgStatus?.updatePkgFound;
   const requiresMods = PROFILES.find((p) => p.id === profile)?.requiresMods ?? false;
 
-  const handleInstall = async () => {
+  const validate = async () => {
+    setStep("validating");
+    const status = await validateInstallation();
+    setInstallation(status);
+    setStep(status.installed ? "manage" : "pkg");
+  };
+
+  useEffect(() => {
+    void validate();
+  }, []);
+
+  const handleAction = async () => {
     setStep("installing");
-    await startInstall(profile, Array.from(selectedMods));
+    const modIds = Array.from(selectedMods);
+    if (step === "manage") {
+      await applyMods(profile, modIds);
+    } else {
+      await startInstall(profile, modIds);
+    }
   };
 
   return (
     <>
-      <PanelSection title="1. Game files">
-        <PkgPicker status={pkgStatus} onStatusChange={setPkgStatus} />
-      </PanelSection>
+      {step === "validating" && (
+        <PanelSection title="Validating installation">
+          <PanelSectionRow>Checking {installation?.installPath ?? "/home/deck/Games/bloodborne"}...</PanelSectionRow>
+        </PanelSection>
+      )}
 
-      {pkgReady && (
+      {step === "pkg" && (
+        <PanelSection title="1. Game files">
+          <PkgPicker status={pkgStatus} onStatusChange={setPkgStatus} />
+        </PanelSection>
+      )}
+
+      {(step === "manage" || pkgReady) && (
         <PanelSection title="2. Profile">
           <ProfileSelector selected={profile} onSelect={setProfile} />
         </PanelSection>
       )}
 
-      {pkgReady && requiresMods && (
+      {(step === "manage" || pkgReady) && requiresMods && (
         <PanelSection title="3. Mods">
           <ModChecklist selected={selectedMods} onChange={setSelectedMods} />
         </PanelSection>
       )}
 
-      {pkgReady && step !== "installing" && step !== "done" && (
+      {(step === "manage" || pkgReady) && step !== "installing" && step !== "done" && (
         <PanelSection>
           <PanelSectionRow>
             <ButtonItem
               layout="below"
               disabled={requiresMods && !selectedMods.has("vertex-explosion-fix")}
-              onClick={handleInstall}
+              onClick={handleAction}
             >
-              Install
+              {step === "manage" ? "Apply changes" : "Install"}
             </ButtonItem>
           </PanelSectionRow>
         </PanelSection>
@@ -72,6 +97,7 @@ function Content() {
           </PanelSectionRow>
         </PanelSection>
       )}
+
     </>
   );
 }

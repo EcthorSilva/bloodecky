@@ -1,5 +1,5 @@
-import { call, addEventListener, removeEventListener } from "@decky/api";
-import { GamePkgStatus, InstallProgressEvent, ProfileId } from "./types";
+import { call, addEventListener, removeEventListener, openFilePicker, FileSelectionType } from "@decky/api";
+import { GamePkgStatus, InstallationStatus, InstallProgressEvent, ProfileId } from "./types";
 
 // Every function here maps 1:1 to a method the Python backend will expose
 // via `Plugin.<name>` in backend/main.py (stages 00-90 from install.sh).
@@ -7,21 +7,43 @@ import { GamePkgStatus, InstallProgressEvent, ProfileId } from "./types";
 // frontend can be built and clicked through on its own.
 
 const USE_MOCKS = true; // flip to false once backend/main.py implements these
+let mockInstallationInstalled = false;
+
+export async function validateInstallation(): Promise<InstallationStatus> {
+  if (USE_MOCKS) {
+    await sleep(250);
+    return { installed: mockInstallationInstalled, installPath: "/home/deck/Games/bloodborne" };
+  }
+  return call<[], InstallationStatus>("validate_installation");
+}
 
 export async function scanGamePkg(): Promise<GamePkgStatus> {
-  if (USE_MOCKS) {
-    await sleep(400);
-    return { basePkgFound: true, basePkgPath: "game-pkg/Bloodborne.pkg", updatePkgFound: true, updatePkgPath: "game-pkg/Bloodborne-update-v1.09.pkg" };
-  }
   return call<[], GamePkgStatus>("scan_game_pkg");
 }
 
-export async function pickGamePkgFolder(): Promise<string | null> {
-  if (USE_MOCKS) {
-    await sleep(300);
-    return "/home/deck/DeckBorne/game-pkg";
-  }
-  return call<[], string | null>("pick_game_pkg_folder");
+export async function pickGamePkgFiles(): Promise<GamePkgStatus | null> {
+  const baseGame = await openFilePicker(
+    FileSelectionType.FILE,
+    "/home/deck/Downloads",
+    true,
+    false,
+    undefined,
+    ["pkg"],
+  );
+  if (!baseGame.path) return null;
+
+  const update = await openFilePicker(
+    FileSelectionType.FILE,
+    "/home/deck/Downloads",
+    true,
+    false,
+    undefined,
+    ["pkg"],
+  );
+  if (!update.path) return null;
+
+  await call<[string, string], void>("import_game_pkgs", baseGame.realpath || baseGame.path, update.realpath || update.path);
+  return scanGamePkg();
 }
 
 export async function listAvailableMods(): Promise<string[]> {
@@ -34,8 +56,16 @@ export async function listAvailableMods(): Promise<string[]> {
 }
 
 export async function startInstall(profile: ProfileId, selectedModIds: string[]): Promise<void> {
-  if (USE_MOCKS) return;
+  if (USE_MOCKS) {
+    mockInstallationInstalled = true;
+    return;
+  }
   await call<[ProfileId, string[]], void>("start_install", profile, selectedModIds);
+}
+
+export async function applyMods(profile: ProfileId, selectedModIds: string[]): Promise<void> {
+  if (USE_MOCKS) return;
+  await call<[ProfileId, string[]], void>("apply_mods", profile, selectedModIds);
 }
 
 export async function cancelInstall(): Promise<void> {

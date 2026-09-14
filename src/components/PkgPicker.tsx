@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { PanelSectionRow, ButtonItem, Field, Spinner } from "@decky/ui";
 import { GamePkgStatus } from "../types";
-import { pickGamePkgFolder, scanGamePkg } from "../api";
+import { pickGamePkgFiles } from "../api";
 
 interface Props {
   status: GamePkgStatus | null;
@@ -11,18 +11,14 @@ interface Props {
 export const PkgPicker: FC<Props> = ({ status, onStatusChange }) => {
   const [scanning, setScanning] = useState(false);
 
-  const rescan = async () => {
+  const pickFiles = async () => {
     setScanning(true);
     try {
-      onStatusChange(await scanGamePkg());
+      const selected = await pickGamePkgFiles();
+      if (selected) onStatusChange(selected);
     } finally {
       setScanning(false);
     }
-  };
-
-  const pickFolder = async () => {
-    const folder = await pickGamePkgFolder();
-    if (folder) await rescan();
   };
 
   return (
@@ -38,8 +34,8 @@ export const PkgPicker: FC<Props> = ({ status, onStatusChange }) => {
         </Field>
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={pickFolder}>
-          Choose game-pkg folder…
+        <ButtonItem layout="below" onClick={pickFiles}>
+          Choose base game and v1.09 update…
         </ButtonItem>
       </PanelSectionRow>
       {!scanning && (!status?.basePkgFound || !status?.updatePkgFound) && (

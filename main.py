@@ -1,4 +1,5 @@
 import os
+import shutil
 
 # The decky plugin module is located at decky-loader/plugin
 # For easy intellisense checkout the decky-loader code repo
@@ -6,7 +7,47 @@ import os
 import decky
 import asyncio
 
+INSTALL_PATH = "/home/deck/Games/bloodborne"
+GAME_PKG_PATH = os.path.join(INSTALL_PATH, "game-pkg")
+INSTALL_MARKER = os.path.join(INSTALL_PATH, ".bloodecky-installed")
+
 class Plugin:
+    async def scan_game_pkg(self) -> dict:
+        base_path = None
+        update_path = None
+        if os.path.isdir(GAME_PKG_PATH):
+            for filename in os.listdir(GAME_PKG_PATH):
+                if not filename.lower().endswith(".pkg"):
+                    continue
+                path = os.path.join(GAME_PKG_PATH, filename)
+                if "update" in filename.lower() or "patch" in filename.lower():
+                    update_path = path
+                elif base_path is None:
+                    base_path = path
+        return {
+            "basePkgFound": base_path is not None,
+            "basePkgPath": base_path,
+            "updatePkgFound": update_path is not None,
+            "updatePkgPath": update_path,
+        }
+
+    async def import_game_pkgs(self, base_path: str, update_path: str) -> None:
+        if not os.path.isfile(base_path) or not os.path.isfile(update_path):
+            raise ValueError("Selected game package files do not exist")
+        os.makedirs(GAME_PKG_PATH, mode=0o755, exist_ok=True)
+        shutil.copy2(base_path, os.path.join(GAME_PKG_PATH, "Bloodborne.pkg"))
+        shutil.copy2(update_path, os.path.join(GAME_PKG_PATH, "Bloodborne-update-v1.09.pkg"))
+
+    async def validate_installation(self) -> dict:
+        return {
+            "installed": os.path.isfile(INSTALL_MARKER),
+            "installPath": INSTALL_PATH,
+        }
+
+    async def apply_mods(self, profile: str, selected_mod_ids: list[str]) -> None:
+        # The installer pipeline will apply the selected overlays in this path.
+        pass
+
     # A normal method. It can be called from the TypeScript side using @decky/api.
     async def add(self, left: int, right: int) -> int:
         return left + right

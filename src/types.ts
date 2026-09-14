@@ -109,3 +109,8 @@ export interface GamePkgStatus {
   updatePkgFound: boolean;
   updatePkgPath?: string;
 }
+
+export interface InstallationStatus {
+  installed: boolean;
+  installPath: string;
+}
