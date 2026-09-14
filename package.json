@@ -1,16 +1,17 @@
 {
-  "name": "decky-plugin-template",
-  "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "name": "bloodecky",
+  "version": "0.0.2",
+  "description": "A simple way to install and manage Bloodborne on your Steam Deck.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
+    "deploy:deck": "pnpm build && ssh -t deck@192.168.15.22 \"sudo chown -R deck:deck /home/deck/homebrew/plugins/bloodecky\" && scp -r ./dist ./main.py ./plugin.json deck@192.168.15.22:/home/deck/homebrew/plugins/bloodecky/ && ssh -t deck@192.168.15.22 \"sudo systemctl restart plugin_loader\"",
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/EcthorSilva/bloodecky.git"
   },
   "keywords": [
     "decky",
@@ -19,12 +20,12 @@
     "steam-deck",
     "deck"
   ],
-  "author": "You <you@you.tld>",
+  "author": "Ecthor Nunes",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/EcthorSilva/bloodecky/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/EcthorSilva/bloodecky#readme",
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
     "@decky/ui": "^4.11.0",
